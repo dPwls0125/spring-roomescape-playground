@@ -2,7 +2,6 @@ package roomescape.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,15 +12,22 @@ import roomescape.model.dto.ReservationRequestDto;
 import roomescape.model.dto.ReservationResponseDto;
 import roomescape.model.entity.Member;
 import roomescape.model.entity.Reservation;
+import roomescape.repository.MemberRepository;
+import roomescape.repository.ReservationRepository;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
 public class ReservationController {
-    private final List<Reservation> reservations = new ArrayList<>();
-    private final List<Member> members = new ArrayList<>();
+
+    private final MemberRepository memberRepository;
+    private final ReservationRepository reservationRepository;
+
+    public ReservationController(final MemberRepository memberRepository, final ReservationRepository reservationRepository) {
+        this.memberRepository = memberRepository;
+        this.reservationRepository = reservationRepository;
+    }
 
     @GetMapping("/")
     public String home() {
@@ -29,16 +35,14 @@ public class ReservationController {
     }
 
     @GetMapping("/reservation")
-    public String getReservationPage(Model model) {
-        List<ReservationResponseDto> dtos = reservations.stream().map(Reservation::toDto).toList();
-        model.addAttribute("reservations", dtos);
+    public String getReservationPage() {
         return "reservation";
     }
 
     @GetMapping("/reservations")
     @ResponseBody
     public ResponseEntity<List<ReservationResponseDto>> getReservations() {
-        List<ReservationResponseDto> dtos = reservations.stream().map(Reservation::toDto).toList();
+        List<ReservationResponseDto> dtos = reservationRepository.getAllReservations().stream().map(Reservation::toDto).toList();
         return ResponseEntity.ok().body(dtos);
     }
 
@@ -47,8 +51,8 @@ public class ReservationController {
 
         Member member = new Member(request.getName());
 
-        if (!members.contains(member)) {
-            members.add(member);
+        if (!memberRepository.isMemberExist(member)) {
+            memberRepository.saveMember(member);
         }
 
         Reservation reservation = Reservation.builder()
@@ -57,19 +61,18 @@ public class ReservationController {
                 .time(request.getTime())
                 .build();
 
-        reservations.add(reservation);
+        reservationRepository.saveReservation(reservation);
         ReservationResponseDto response = reservation.toDto();
 
         URI location = URI.create("/reservations/" + response.getId());
         return ResponseEntity.created(location).body(response);
     }
 
-    @DeleteMapping("/reservations/{reservationId}")
-    public ResponseEntity<Void> deleteReservation(@PathVariable int reservationId) {
-        Reservation reservation = reservations.stream().filter(r -> r.getId() == reservationId)
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약 ID입니다."));
-
-        reservations.remove(reservation);
+    @DeleteMapping("/reservations/{reservationId}") 
+    public ResponseEntity<Void> deleteReservation(@PathVariable Long reservationId) {
+        reservationRepository.deleteReservation(reservationId);
         return ResponseEntity.noContent().build();
     }
+
+
 }

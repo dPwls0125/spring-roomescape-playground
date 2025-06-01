@@ -1,21 +1,26 @@
 package roomescape.model.entity;
 
+import roomescape.exception.BadRequestException;
 import roomescape.model.dto.ReservationResponseDto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Reservation {
 
-    private static final AtomicInteger count = new AtomicInteger(1);
-    private final int id;
+    private static final AtomicLong count = new AtomicLong(1);
+    private final long id;
     private final Member member;
     private final LocalDate date;
     private final LocalTime time;
 
     private Reservation(final Member member, final LocalDate date, final LocalTime time) {
+        if (member == null || date == null || time == null) {
+            throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다.");
+        }
         this.id = count.getAndIncrement();
         this.member = member;
         this.date = date;
@@ -26,8 +31,19 @@ public class Reservation {
         return new ReservationResponseDto(id, member.getName(), date, time);
     }
 
-    public int getId() {
+    public Boolean isHourDuplicated(LocalTime time) {
+        if (time.format(DateTimeFormatter.ofPattern("HH")).equals(this.time.format(DateTimeFormatter.ofPattern("HH")))) {
+            return true;
+        }
+        return false;
+    }
+
+    public long getId() {
         return id;
+    }
+
+    public LocalTime getTime() {
+        return time;
     }
 
     @Override

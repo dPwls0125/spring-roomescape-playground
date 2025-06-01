@@ -1,11 +1,14 @@
 package roomescape.model.entity;
 
+import roomescape.exception.BadRequestException;
+
 import java.util.Objects;
 
 public class Member {
     private final String name;
 
     public Member(final String name) {
+        if (name == null || name.isBlank()) throw new BadRequestException("이름이 null이면 안됩니다.");
         this.name = name;
     }
 
