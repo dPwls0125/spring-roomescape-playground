@@ -7,21 +7,18 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Reservation {
-
-    private static final AtomicLong count = new AtomicLong(1);
     private final long id;
     private final Member member;
     private final LocalDate date;
     private final LocalTime time;
 
-    private Reservation(final Member member, final LocalDate date, final LocalTime time) {
+    private Reservation(final long id, final Member member, final LocalDate date, final LocalTime time) {
         if (member == null || date == null || time == null) {
             throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다.");
         }
-        this.id = count.getAndIncrement();
+        this.id = id;
         this.member = member;
         this.date = date;
         this.time = time;
@@ -63,9 +60,16 @@ public class Reservation {
     }
 
     public static class Builder {
+
+        private long id;
         private Member member;
         private LocalDate date;
         private LocalTime time;
+
+        public Builder id(long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder member(Member member) {
             this.member = member;
@@ -83,7 +87,7 @@ public class Reservation {
         }
 
         public Reservation build() {
-            return new Reservation(member, date, time);
+            return new Reservation(id, member, date, time);
         }
     }
 }

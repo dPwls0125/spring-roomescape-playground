@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.is;
 public class MissionStepTest {
 
     @Test
-    void 일단계() {
+    void testHomePageReturn() {
         RestAssured.given().log().all()
                 .when().get("/")
                 .then().log().all()
@@ -24,13 +24,14 @@ public class MissionStepTest {
     }
 
     @Test
-    void 이단계() {
+    void testAccessReservationPageAndGetReservationList() {
 
         RestAssured.given()
                 .when().log().all()
                 .get("/reservation")
                 .then()
                 .log().all()
+                .contentType(ContentType.HTML)
                 .statusCode(200);
 
         RestAssured.given().log().all()
@@ -38,11 +39,12 @@ public class MissionStepTest {
                 .then()
                 .log().all()
                 .statusCode(200)
+                .contentType(ContentType.JSON)
                 .body("size()", is(0));
     }
 
     @Test
-    void 삼단계() {
+    void testCreateAndDeleteReservation() {
         Map<String, String> params = new HashMap<>();
         params.put("name", "브라운");
         params.put("date", "2023-08-05");
@@ -77,7 +79,7 @@ public class MissionStepTest {
     }
 
     @Test
-    void 사단계() {
+    void testExceptionHandling() {
         Map<String, String> params = new HashMap<>();
         params.put("name", "브라운");
         params.put("date", "");

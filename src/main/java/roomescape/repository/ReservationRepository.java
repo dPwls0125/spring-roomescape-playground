@@ -6,13 +6,19 @@ import roomescape.model.entity.Reservation;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class ReservationRepository {
+    private static final AtomicLong count = new AtomicLong(1);
     private final List<Reservation> reservations;
 
     public ReservationRepository(final List<Reservation> reservations) {
         this.reservations = reservations;
+    }
+
+    public long getNextId() {
+        return count.getAndIncrement();
     }
 
     public List<Reservation> getAllReservations() {
