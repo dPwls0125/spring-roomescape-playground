@@ -10,22 +10,22 @@ import java.util.Objects;
 
 public class Reservation {
     private final long id;
-    private final Member member;
+    private final String name;
     private final LocalDate date;
     private final LocalTime time;
 
-    private Reservation(final long id, final Member member, final LocalDate date, final LocalTime time) {
-        if (member == null || date == null || time == null) {
+    private Reservation(final long id, final String name, final LocalDate date, final LocalTime time) {
+        if (name == null || date == null || time == null) {
             throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다.");
         }
         this.id = id;
-        this.member = member;
+        this.name = name;
         this.date = date;
         this.time = time;
     }
 
     public ReservationResponseDto toDto() {
-        return new ReservationResponseDto(id, member.getName(), date, time);
+        return new ReservationResponseDto(id, name, date, time);
     }
 
     public Boolean isHourDuplicated(LocalTime time) {
@@ -62,7 +62,7 @@ public class Reservation {
     public static class Builder {
 
         private long id;
-        private Member member;
+        private String name;
         private LocalDate date;
         private LocalTime time;
 
@@ -71,8 +71,8 @@ public class Reservation {
             return this;
         }
 
-        public Builder member(Member member) {
-            this.member = member;
+        public Builder name(String name) {
+            this.name = name;
             return this;
         }
 
@@ -87,7 +87,7 @@ public class Reservation {
         }
 
         public Reservation build() {
-            return new Reservation(id, member, date, time);
+            return new Reservation(id, name, date, time);
         }
     }
 }

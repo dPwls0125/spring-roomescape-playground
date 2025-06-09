@@ -2,10 +2,15 @@ package roomescape;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,11 +20,15 @@ import static org.hamcrest.Matchers.is;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class MissionStepTest {
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @Test
     void testHomePageReturn() {
         RestAssured.given().log().all()
                 .when().get("/")
                 .then().log().all()
+                .contentType(ContentType.HTML)
                 .statusCode(200);
     }
 
@@ -99,4 +108,19 @@ public class MissionStepTest {
                 .then().log().all()
                 .statusCode(400);
     }
+
+    @Test
+    void 오단계() {
+
+        SoftAssertions softly = new SoftAssertions();
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
+            softly.assertThat(connection).isNotNull();
+            softly.assertThat(connection.getCatalog()).isEqualTo("DATABASE");
+            softly.assertThat(connection.getMetaData().getTables(null, null, "RESERVATION", null).next()).isTrue();
+            softly.assertAll();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
