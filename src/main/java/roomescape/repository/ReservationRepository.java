@@ -1,45 +1,63 @@
 package roomescape.repository;
 
-import org.springframework.stereotype.Component;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 import roomescape.exception.BadRequestException;
+import roomescape.model.dto.ReservationRequestDto;
 import roomescape.model.entity.Reservation;
 
-import java.util.Collections;
+import java.sql.Statement;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
-@Component
+@Repository
 public class ReservationRepository {
-    private static final AtomicLong count = new AtomicLong(1);
-    private final List<Reservation> reservations;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ReservationRepository(final List<Reservation> reservations) {
-        this.reservations = reservations;
+    public ReservationRepository(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public long getNextId() {
-        return count.getAndIncrement();
+    public List<Reservation> findAllReservations() {
+
+        RowMapper<Reservation> reservationRowMapper = (resultSet, rowNum) -> {
+            Reservation reservation = Reservation.builder()
+                    .id(resultSet.getLong("id"))
+                    .name(resultSet.getString("name"))
+                    .date(resultSet.getDate("date").toLocalDate())
+                    .time(resultSet.getTime("time").toLocalTime())
+                    .build();
+            return reservation;
+        };
+
+        String sql = "SELECT id, name, date, time FROM reservation";
+        return jdbcTemplate.query(sql, reservationRowMapper);
     }
 
-    public List<Reservation> getAllReservations() {
-        return Collections.unmodifiableList(reservations);
-    }
-
-    public void saveReservation(final Reservation newReservation) {
+    public long saveReservation(final ReservationRequestDto requestDto) {
+        List<Reservation> reservations = findAllReservations();
         boolean isDuplicatedTime = reservations.stream()
-                .anyMatch(reservation -> reservation.isHourDuplicated(newReservation.getTime()));
+                .anyMatch(reservation -> reservation.isHourDuplicated(requestDto.getTime()));
 
         if (isDuplicatedTime) throw new BadRequestException("이미 존재하는 예약과 시간이 중복됩니다.");
-        if (reservations.contains(newReservation)) throw new BadRequestException("이미 존재하는 예약입니다.");
 
-        reservations.add(newReservation);
+        KeyHolder kh = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            var ps = con.prepareStatement("INSERT INTO reservation (name, date, time) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, requestDto.getName());
+            ps.setObject(2, requestDto.getDate());
+            ps.setObject(3, requestDto.getTime());
+            return ps;
+        }, kh);
+
+        long newId = kh.getKey().longValue();
+        return newId;
     }
 
     public void deleteReservation(final Long id) {
-        boolean removed = reservations.removeIf(reservation -> reservation.getId() == id);
-        if (!removed) {
-            throw new BadRequestException("존재하지 않는 예약 Id입니다.");
-        }
+        jdbcTemplate.update("DELETE FROM reservation WHERE id = ?", id);
     }
 
 }

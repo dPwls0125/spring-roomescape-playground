@@ -40,10 +40,10 @@ public class ReservationController {
     }
 
     @PostMapping("/reservations")
-    public ResponseEntity<ReservationResponseDto> saveReservation(@RequestBody ReservationRequestDto request) {
-        ReservationResponseDto response = reservationService.saveReservation(request.getName(), request.getDate(), request.getTime());
-        URI location = URI.create("/reservations/" + response.getId());
-        return ResponseEntity.created(location).body(response);
+    public ResponseEntity<Void> saveReservation(@RequestBody ReservationRequestDto request) {
+        long id = reservationService.saveReservation(request);
+        URI location = URI.create("/reservations/" + id);
+        return ResponseEntity.created(location).build();
     }
 
     @DeleteMapping("/reservations/{reservationId}")

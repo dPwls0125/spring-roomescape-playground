@@ -23,6 +23,10 @@ public class ReservationResponseDto {
         return id;
     }
 
+    public LocalDate getDate() {
+        return date;
+    }
+
     public String getName() {
         return name;
     }

@@ -16,7 +16,7 @@ public class Reservation {
 
     private Reservation(final long id, final String name, final LocalDate date, final LocalTime time) {
         if (name == null || date == null || time == null) {
-            throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다.");
+            throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다." + name + " " + date + " " + time);
         }
         this.id = id;
         this.name = name;
@@ -33,10 +33,6 @@ public class Reservation {
             return true;
         }
         return false;
-    }
-
-    public long getId() {
-        return id;
     }
 
     public LocalTime getTime() {
