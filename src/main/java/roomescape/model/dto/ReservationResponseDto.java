@@ -1,37 +1,26 @@
 package roomescape.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+@Getter
 public class ReservationResponseDto {
-    private long id;
-    private String name;
-    private LocalDate date;
+    private final long id;
+
+    private final String name;
+
+    private final LocalDate date;
+
     @JsonFormat(pattern = "HH:mm")
-    private LocalTime time;
+    private final LocalTime time;
 
     public ReservationResponseDto(final long id, final String name, final LocalDate date, final LocalTime time) {
         this.id = id;
         this.name = name;
         this.date = date;
         this.time = time;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public LocalTime getTime() {
-        return time;
     }
 }

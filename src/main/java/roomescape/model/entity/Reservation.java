@@ -1,11 +1,11 @@
 package roomescape.model.entity;
 
+import lombok.Builder;
 import roomescape.exception.BadRequestException;
 import roomescape.model.dto.ReservationResponseDto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class Reservation {
@@ -14,10 +14,9 @@ public class Reservation {
     private final LocalDate date;
     private final LocalTime time;
 
+    @Builder
     private Reservation(final long id, final String name, final LocalDate date, final LocalTime time) {
-        if (name == null || date == null || time == null) {
-            throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다." + name + " " + date + " " + time);
-        }
+        validateArgumentNotEmpty(name, date, time);
         this.id = id;
         this.name = name;
         this.date = date;
@@ -29,10 +28,11 @@ public class Reservation {
     }
 
     public Boolean isHourDuplicated(LocalTime time) {
-        if (time.format(DateTimeFormatter.ofPattern("HH")).equals(this.time.format(DateTimeFormatter.ofPattern("HH")))) {
-            return true;
-        }
-        return false;
+        return time.getHour() == this.time.getHour();
+    }
+
+    public Boolean isDateDuplicated(LocalDate date) {
+        return date.equals(date);
     }
 
     public LocalTime getTime() {
@@ -51,39 +51,12 @@ public class Reservation {
         return Objects.hash(id);
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-
-        private long id;
-        private String name;
-        private LocalDate date;
-        private LocalTime time;
-
-        public Builder id(long id) {
-            this.id = id;
-            return this;
+    private void validateArgumentNotEmpty(final String name, final LocalDate date, final LocalTime time) {
+        if (name.isBlank()) {
+            throw new BadRequestException("이름 필드는 비어있을 수 없습니다.");
         }
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder date(LocalDate date) {
-            this.date = date;
-            return this;
-        }
-
-        public Builder time(LocalTime time) {
-            this.time = time;
-            return this;
-        }
-
-        public Reservation build() {
-            return new Reservation(id, name, date, time);
+        if (date == null || time == null) {
+            throw new BadRequestException("날짜, 시간 필드는 비어있을 수 없습니다.");
         }
     }
 }

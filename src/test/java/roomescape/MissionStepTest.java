@@ -137,7 +137,6 @@ public class MissionStepTest {
                 .jsonPath().getList(".", Reservation.class);
 
         Integer count = jdbcTemplate.queryForObject("SELECT count(1) from reservation", Integer.class);
-
         assertThat(reservations.size()).isEqualTo(count);
     }
 
