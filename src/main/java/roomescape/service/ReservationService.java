@@ -25,18 +25,9 @@ public class ReservationService {
     }
 
     public ReservationResponseDto saveReservation(final ReservationRequestDto requestDto) {
-        List<Reservation> rerservations = reservationRepository.findAll();
-
-        boolean isDplicatedDateAndTime = rerservations.stream()
-                .filter(reservation -> reservation.isDateDuplicated(requestDto.getDate()))
-                .anyMatch(reservation -> reservation.isHourDuplicated(requestDto.getTime()));
-
-        if (isDplicatedDateAndTime) {
-            throw new BadRequestException("해당 날짜와 시간대의 예약이 이미 존재합니다.");
-        }
-
-        long id = reservationRepository.save(requestDto);
-        return new ReservationResponseDto(id, requestDto.getName(), requestDto.getDate(), requestDto.getTime());
+        long reservation_id = reservationRepository.save(requestDto);
+        Reservation savedReservation = reservationRepository.findById(reservation_id);
+        return savedReservation.toDto();
     }
 
     public void deleteReservation(final Long reservationId) {

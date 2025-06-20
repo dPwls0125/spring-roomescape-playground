@@ -5,17 +5,16 @@ import roomescape.exception.BadRequestException;
 import roomescape.model.dto.ReservationResponseDto;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Objects;
 
 public class Reservation {
     private final long id;
     private final String name;
     private final LocalDate date;
-    private final LocalTime time;
+    private final Time time;
 
     @Builder
-    private Reservation(final long id, final String name, final LocalDate date, final LocalTime time) {
+    private Reservation(final long id, final String name, final LocalDate date, final Time time) {
         validateArgumentNotEmpty(name, date, time);
         this.id = id;
         this.name = name;
@@ -24,18 +23,10 @@ public class Reservation {
     }
 
     public ReservationResponseDto toDto() {
-        return new ReservationResponseDto(id, name, date, time);
+        return new ReservationResponseDto(id, name, date, time.toDto());
     }
 
-    public Boolean isHourDuplicated(LocalTime time) {
-        return time.getHour() == this.time.getHour();
-    }
-
-    public Boolean isDateDuplicated(LocalDate date) {
-        return date.equals(date);
-    }
-
-    public LocalTime getTime() {
+    public Time getTime() {
         return time;
     }
 
@@ -51,7 +42,7 @@ public class Reservation {
         return Objects.hash(id);
     }
 
-    private void validateArgumentNotEmpty(final String name, final LocalDate date, final LocalTime time) {
+    private void validateArgumentNotEmpty(final String name, final LocalDate date, final Time time) {
         if (name.isBlank()) {
             throw new BadRequestException("이름 필드는 비어있을 수 없습니다.");
         }

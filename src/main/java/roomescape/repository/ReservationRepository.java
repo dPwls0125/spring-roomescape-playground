@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import roomescape.model.dto.ReservationRequestDto;
 import roomescape.model.entity.Reservation;
+import roomescape.model.entity.Time;
 
 import java.util.List;
 
@@ -18,11 +19,16 @@ public class ReservationRepository {
 
     private static final RowMapper<Reservation> reservationRowMapper = (resultSet, rowNum) -> {
 
+        Time time = Time.builder()
+                .time(resultSet.getTime("time_value").toLocalTime())
+                .id(resultSet.getLong("time_id"))
+                .build();
+
         Reservation reservation = Reservation.builder()
-                .id(resultSet.getLong("id"))
+                .id(resultSet.getLong("reservation_id"))
                 .name(resultSet.getString("name"))
                 .date(resultSet.getDate("date").toLocalDate())
-                .time(resultSet.getTime("time").toLocalTime())
+                .time(time)
                 .build();
 
         return reservation;
@@ -32,13 +38,36 @@ public class ReservationRepository {
         this.jdbcTemplate = jdbcTemplate;
         this.simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("reservation")
-                .usingColumns("name", "date", "time")
+                .usingColumns("name", "date", "time_id")
                 .usingGeneratedKeyColumns("id");
     }
 
     public List<Reservation> findAll() {
-        String sql = "SELECT id, name, date, time FROM reservation";
+        String sql = """
+                select
+                r.id as reservation_id,
+                r.name as reservation_name,
+                r.date as reservation_date,
+                t.id as time_id,
+                t.time as time_value
+                from reservation as r inner join time as t on r.time_id = t.id
+                """;
         return jdbcTemplate.query(sql, reservationRowMapper);
+    }
+
+    public Reservation findById(long id) {
+        String sql = """
+                select
+                r.id as reservation_id,
+                r.name as reservation_name,
+                r.date as reservation_date,
+                t.id as time_id,
+                t.time as time_value
+                from reservation as r inner join time as t on r.time_id = t.id
+                where r.id = ?
+                """;
+
+        return jdbcTemplate.queryForObject(sql, reservationRowMapper, id);
     }
 
     public long save(final ReservationRequestDto requestDto) {
