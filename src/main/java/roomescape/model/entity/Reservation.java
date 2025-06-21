@@ -1,45 +1,32 @@
 package roomescape.model.entity;
 
+import lombok.Builder;
 import roomescape.exception.BadRequestException;
 import roomescape.model.dto.ReservationResponseDto;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class Reservation {
     private final long id;
-    private final Member member;
+    private final String name;
     private final LocalDate date;
-    private final LocalTime time;
+    private final Time time;
 
-    private Reservation(final long id, final Member member, final LocalDate date, final LocalTime time) {
-        if (member == null || date == null || time == null) {
-            throw new BadRequestException("입력 인자가 NUll인 것이 존재합니다.");
-        }
+    @Builder
+    private Reservation(final long id, final String name, final LocalDate date, final Time time) {
+        validateArgumentNotEmpty(name, date, time);
         this.id = id;
-        this.member = member;
+        this.name = name;
         this.date = date;
         this.time = time;
     }
 
     public ReservationResponseDto toDto() {
-        return new ReservationResponseDto(id, member.getName(), date, time);
+        return new ReservationResponseDto(id, name, date, time.toDto());
     }
 
-    public Boolean isHourDuplicated(LocalTime time) {
-        if (time.format(DateTimeFormatter.ofPattern("HH")).equals(this.time.format(DateTimeFormatter.ofPattern("HH")))) {
-            return true;
-        }
-        return false;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public LocalTime getTime() {
+    public Time getTime() {
         return time;
     }
 
@@ -55,39 +42,12 @@ public class Reservation {
         return Objects.hash(id);
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-
-        private long id;
-        private Member member;
-        private LocalDate date;
-        private LocalTime time;
-
-        public Builder id(long id) {
-            this.id = id;
-            return this;
+    private void validateArgumentNotEmpty(final String name, final LocalDate date, final Time time) {
+        if (name.isBlank()) {
+            throw new BadRequestException("이름 필드는 비어있을 수 없습니다.");
         }
-
-        public Builder member(Member member) {
-            this.member = member;
-            return this;
-        }
-
-        public Builder date(LocalDate date) {
-            this.date = date;
-            return this;
-        }
-
-        public Builder time(LocalTime time) {
-            this.time = time;
-            return this;
-        }
-
-        public Reservation build() {
-            return new Reservation(id, member, date, time);
+        if (date == null || time == null) {
+            throw new BadRequestException("날짜, 시간 필드는 비어있을 수 없습니다.");
         }
     }
 }

@@ -1,45 +1,83 @@
 package roomescape.repository;
 
-import org.springframework.stereotype.Component;
-import roomescape.exception.BadRequestException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.stereotype.Repository;
+import roomescape.model.dto.ReservationRequestDto;
 import roomescape.model.entity.Reservation;
+import roomescape.model.entity.Time;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
-@Component
+@Repository
 public class ReservationRepository {
-    private static final AtomicLong count = new AtomicLong(1);
-    private final List<Reservation> reservations;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ReservationRepository(final List<Reservation> reservations) {
-        this.reservations = reservations;
+    private final SimpleJdbcInsert simpleJdbcInsert;
+
+    private static final RowMapper<Reservation> reservationRowMapper = (resultSet, rowNum) -> {
+
+        Time time = Time.builder()
+                .time(resultSet.getTime("time_value").toLocalTime())
+                .id(resultSet.getLong("time_id"))
+                .build();
+
+        Reservation reservation = Reservation.builder()
+                .id(resultSet.getLong("reservation_id"))
+                .name(resultSet.getString("name"))
+                .date(resultSet.getDate("date").toLocalDate())
+                .time(time)
+                .build();
+
+        return reservation;
+    };
+
+    public ReservationRepository(final JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
+                .withTableName("reservation")
+                .usingColumns("name", "date", "time_id")
+                .usingGeneratedKeyColumns("id");
     }
 
-    public long getNextId() {
-        return count.getAndIncrement();
+    public List<Reservation> findAll() {
+        String sql = """
+                select
+                r.id as reservation_id,
+                r.name as reservation_name,
+                r.date as reservation_date,
+                t.id as time_id,
+                t.time as time_value
+                from reservation as r inner join time as t on r.time_id = t.id
+                """;
+        return jdbcTemplate.query(sql, reservationRowMapper);
     }
 
-    public List<Reservation> getAllReservations() {
-        return Collections.unmodifiableList(reservations);
+    public Reservation findById(long id) {
+        String sql = """
+                select
+                r.id as reservation_id,
+                r.name as reservation_name,
+                r.date as reservation_date,
+                t.id as time_id,
+                t.time as time_value
+                from reservation as r inner join time as t on r.time_id = t.id
+                where r.id = ?
+                """;
+
+        return jdbcTemplate.queryForObject(sql, reservationRowMapper, id);
     }
 
-    public void saveReservation(final Reservation newReservation) {
-        boolean isDuplicatedTime = reservations.stream()
-                .anyMatch(reservation -> reservation.isHourDuplicated(newReservation.getTime()));
-
-        if (isDuplicatedTime) throw new BadRequestException("이미 존재하는 예약과 시간이 중복됩니다.");
-        if (reservations.contains(newReservation)) throw new BadRequestException("이미 존재하는 예약입니다.");
-
-        reservations.add(newReservation);
+    public long save(final ReservationRequestDto requestDto) {
+        BeanPropertySqlParameterSource param = new BeanPropertySqlParameterSource(requestDto);
+        return simpleJdbcInsert.executeAndReturnKey(param).longValue();
     }
 
-    public void deleteReservation(final Long id) {
-        boolean removed = reservations.removeIf(reservation -> reservation.getId() == id);
-        if (!removed) {
-            throw new BadRequestException("존재하지 않는 예약 Id입니다.");
-        }
-    }
 
+    public int delete(final Long id) {
+        int result = jdbcTemplate.update("DELETE FROM reservation WHERE id = ?", id);
+        return result;
+    }
 }

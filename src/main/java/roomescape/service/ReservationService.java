@@ -1,62 +1,39 @@
 package roomescape.service;
 
 import org.springframework.stereotype.Service;
+import roomescape.exception.BadRequestException;
+import roomescape.model.dto.ReservationRequestDto;
 import roomescape.model.dto.ReservationResponseDto;
-import roomescape.model.entity.Member;
 import roomescape.model.entity.Reservation;
-import roomescape.repository.MemberRepository;
 import roomescape.repository.ReservationRepository;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Service
 public class ReservationService {
-
-    private final MemberRepository memberRepository;
     private final ReservationRepository reservationRepository;
 
-    public ReservationService(final MemberRepository memberRepository, final ReservationRepository reservationRepository) {
-        this.memberRepository = memberRepository;
+    public ReservationService(final ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
     }
 
     public List<ReservationResponseDto> getAllReservations() {
-        return reservationRepository.getAllReservations()
+        return reservationRepository.findAll()
                 .stream()
                 .map(Reservation::toDto)
                 .toList();
     }
 
-    public ReservationResponseDto saveReservation(final String name, final LocalDate date, final LocalTime time) {
-
-        Reservation reservation = Reservation.builder()
-                .id(reservationRepository.getNextId())
-                .member(getMember(name))
-                .date(date)
-                .time(time)
-                .build();
-
-        reservationRepository.saveReservation(reservation);
-        ReservationResponseDto reservationResponseDto = reservation.toDto();
-
-        return reservationResponseDto;
-    }
-
-    private Member getMember(String name) {
-        Member member = new Member(name);
-
-        if (!memberRepository.isMemberExist(member)) {
-            memberRepository.saveMember(member);
-        }
-
-        return member;
+    public ReservationResponseDto saveReservation(final ReservationRequestDto requestDto) {
+        long reservation_id = reservationRepository.save(requestDto);
+        Reservation savedReservation = reservationRepository.findById(reservation_id);
+        return savedReservation.toDto();
     }
 
     public void deleteReservation(final Long reservationId) {
-        reservationRepository.deleteReservation(reservationId);
+        int result = reservationRepository.delete(reservationId);
+        if (result == 0) {
+            throw new BadRequestException("id값에 해당하는 예약이 존재하지 않습니다.");
+        }
     }
-
-
 }
