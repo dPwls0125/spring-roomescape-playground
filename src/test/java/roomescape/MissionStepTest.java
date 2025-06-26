@@ -167,11 +167,6 @@ public class MissionStepTest {
     }
 
 
-    @Test
-    void testDuplicatedReservationFail(){
-        boolean isJdbc
-    }
-
 }
 
 
